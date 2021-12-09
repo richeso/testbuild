@@ -42,13 +42,13 @@ pipeline {
                         sh 'echo checking out on REFRESH in order to update workspace'                   
                         git branch: "${params.BRANCH}",  url: "${giturl}"
                        	// jenkins pipeline  script invoation
-						def result = sh script: './build/findfile.sh ${inputdir} ${filetype} || echo error', returnStdout: true
-						def error = result.endsWith("error")
-						sh 'echo $result'
-						sh 'echo $error'
+						result = sh script: './build/findfile.sh ${inputdir} ${filetype} || echo error', returnStdout: true
+						error = result.endsWith("error")
+						sh "echo $result"
+						sh "echo ${error"
                     }
                 }
             }
         }
     }
-}        
+}
