@@ -1,4 +1,6 @@
 def continueSteps = true
+def appname = "testbuild"
+def giturl = "git@github.com:richeso/${appname}.git"
 
 pipeline {
     agent any
@@ -21,6 +23,7 @@ pipeline {
                             booleanParam(name: "REFRESH", description: 'Refresh workspace From SCM', defaultValue: false),
                             choice(choices: ['./target', './build'], description: 'inputdir', name: 'inputdir'),
                             choice(choices: ['txt', 'sh'], description: 'filetype', name: 'filetype'),
+                            gitParameter (branchFilter: 'origin/(.*)', defaultValue: 'master', name: 'BRANCH', type: 'PT_BRANCH')
                         ])
                     ])
                 }
@@ -36,7 +39,8 @@ pipeline {
                  sh 'mvn -version'
                  script {
                     if (params.REFRESH) {
-                        sh 'echo checking out on REFRESH in order to update workspace'
+                        sh 'echo checking out on REFRESH in order to update workspace'                   
+                        git branch: "${params.BRANCH}",  url: "${giturl}"
                        	// jenkins pipeline  script invoation
 						def result = sh script: './build/findfile.sh ${inputdir} ${filetype} || echo error', returnStdout: true
 						def error = result.endsWith("error")
