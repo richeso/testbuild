@@ -14,7 +14,7 @@ findfile() {
 	for file in *.$filetype
 	do
  # do something on "$file"
- 		echo "jar file found: $file" 
+ 		echo "*.$filetype file found: $file" 
  ##modfile=${file//[-.]/|}
  		foundfile=$file
  		modfile=$(echo "$file" | sed -r 's/[-.]+/|/g')
