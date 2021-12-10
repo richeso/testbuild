@@ -1,9 +1,10 @@
 def continueSteps = true
 def appname = "testbuild"
 def giturl = "git@github.com:richeso/${appname}.git"
-
+def jarfile=""
 pipeline {
     agent any
+    
     tools {
         maven "maven3.8.4"
         jdk "jdk8"
@@ -51,38 +52,14 @@ pipeline {
             }
         }
         
-        stage("Test2") {
+        stage("Test1-writefile") {
             steps {
                 sh script:'''
                     #!/usr/bin/env bash
                     curdir=$(pwd)
-                    echo "This is starting directory in impromptu script $curdir"
-                    [ -d ios ] && rm -rf ios
-                    [ -d ios ] || mkdir ios
-                    cd ./ios
-                    echo "This is current working directory now: $(pwd)"
-                    cd ..
-                    cd ../BuildMsweb/target
-                	for file in *.notthere
-                	do
-                    # do something on "$file"
-                 		echo "jar file found: $file"
-                 		foundfile=$file
-                 		modfile=$(echo "$file" | sed -r 's/[-.]+/|/g')
-                 		echo "modfile: " $modfile
-                 		appname=$(echo $modfile | awk -F'|' '{print $1}')
-                 		break
-                	done
-                	echo "This is file name:"$foundfile
-                	echo "This is appname:"$appname
-                	if [ -f "$foundfile" ]; then
-                        echo "$foundfile exists."
-                    else 
-                        echo "$foundfile does not exist."
-                    fi
                 	cd $curdir
                 	echo "creating temp file: mytempfile.txt in directory: $curdir"
-                	cat << EOF > mytempfile.txt
+cat << EOF > mytempfile.txt
 The current working directory is: $PWD
 You are logged in as: $(whoami)
 These contents will be written to the file.
@@ -95,5 +72,50 @@ EOF
                 '''
             }
         }
+        
+        stage("Test2-checkfile") {
+            steps {
+               script {
+                  def foundfile = sh (returnStdout: true, script: '''
+                        #!/usr/bin/env bash
+                        curdir=$(pwd)
+                        echo "This is starting directory in impromptu script $curdir"
+                        [ -d ios ] && rm -rf ios
+                        [ -d ios ] || mkdir ios
+                        cd ./ios
+                        echo "This is current working directory now: $(pwd)"
+                        cd ..
+                        cd ../BuildMgrweb/target
+                    	for file in *.jar
+                    	do
+                        # do something on "$file"
+                     		echo "jar file found: $file"
+                     		foundfile=$file
+                     		modfile=$(echo "$file" | sed -r 's/[-.]+/|/g')
+                     		echo "modfile: " $modfile
+                     		appname=$(echo $modfile | awk -F'|' '{print $1}')
+                     		break
+                    	done
+                        echo $foundfile
+                    ''').split()
+                def commit = sh (returnStdout: true, script: '''echo hi
+                echo bye | grep -o "e"
+                date
+                echo lol''').split()
+                echo "commit: ${commit[-1]} "
+                echo "foundfile: ${foundfile[-1]}"
+                jarfile="${foundfile[-1]}"
+               }
+            }
+        }
+     
+    stage("Test3") {
+        steps {
+            script {
+                echo "jarfile is: $jarfile"
+                echo "End-test-3"
+            }
+        }
+    }
     }
 }
