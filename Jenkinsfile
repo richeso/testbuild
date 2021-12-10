@@ -1,6 +1,7 @@
 def continueSteps = true
 def appname = "testbuild"
 def giturl = "git@github.com:richeso/${appname}.git"
+def workingdir=""
 def jarfile=""
 pipeline {
     agent any
@@ -72,44 +73,69 @@ EOF
                 '''
             }
         }
-        
-        stage("Test2-checkfile") {
+        stage("Test2-createdir") {
+            steps {
+                sh script: '''
+                #!/usr/bin/env bash
+                curdir=$(pwd)
+                echo "This is starting directory in impromptu script $curdir"
+                [ -d ios ] && rm -rf ios
+                [ -d ios ] || mkdir ios
+                cd ./ios
+                echo "This is current working directory now: $(pwd)"
+                '''
+            }
+        }
+        stage("Test3-checkfile") {
             steps {
                script {
                   def foundfile = sh (returnStdout: true, script: '''
                         #!/usr/bin/env bash
                         curdir=$(pwd)
-                        echo "This is starting directory in impromptu script $curdir"
-                        [ -d ios ] && rm -rf ios
-                        [ -d ios ] || mkdir ios
-                        cd ./ios
-                        echo "This is current working directory now: $(pwd)"
-                        cd ..
                         cd ../BuildMgrweb/target
                     	for file in *.jar
                     	do
                         # do something on "$file"
-                     		echo "jar file found: $file"
                      		foundfile=$file
                      		modfile=$(echo "$file" | sed -r 's/[-.]+/|/g')
-                     		echo "modfile: " $modfile
                      		appname=$(echo $modfile | awk -F'|' '{print $1}')
+                     		major=$(echo $modfile | awk -F'|' '{print $2}')
+                     		minor=$(echo $modfile | awk -F'|' '{print $3}')
+                     		patch=$(echo $modfile | awk -F'|' '{print $4}')
+                     		build=$(echo $modfile | awk -F'|' '{print $5}')
+                     		type=$(echo $modfile | awk -F'|' '{print $6}')
                      		break
                     	done
+                    	echo $appname
+                    	echo $major
+                    	echo $minor
+                    	echo $patch
+                    	echo $build
+                    	echo $type
                         echo $foundfile
                     ''').split()
                 def commit = sh (returnStdout: true, script: '''echo hi
                 echo bye | grep -o "e"
                 date
                 echo lol''').split()
-                echo "commit: ${commit[-1]} "
-                echo "foundfile: ${foundfile[-1]}"
+                echo "commit-1: ${commit[-1]} "
+                echo "commit0: ${commit[0]} "
+                echo "commit1: ${commit[1]} "
+                echo "commit2: ${commit[2]} "
+                echo "foundfile-1: ${foundfile[-1]}"
+                echo "foundfile0: ${foundfile[0]}"
+                echo "foundfile1: ${foundfile[1]}"
+                echo "foundfile2: ${foundfile[2]}"
+                echo "foundfile3: ${foundfile[3]}"
+                echo "foundfile4: ${foundfile[4]}"
+                echo "foundfile5: ${foundfile[5]}"
+                echo "foundfile6: ${foundfile[6]}"
                 jarfile="${foundfile[-1]}"
                }
             }
         }
      
-    stage("Test3") {
+    stage("Test4-End") {
         steps {
             script {
                 echo "jarfile is: $jarfile"
