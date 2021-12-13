@@ -16,7 +16,10 @@ def writeservice() {
             		usr="$varuser"
                     curdir=$(pwd)
                 	cd $curdir
-                	echo "creating file: $app.service in directory: $curdir"
+                	[ -d $app ] && rm -rf $app
+                	mkdir $app
+                	cd $app
+                	echo "creating file: $app.service in directory: $curdir/$app"
 cat << EOF > $app.service
 [Unit]
 Description=Volume Request Rest Web
@@ -24,8 +27,8 @@ After=syslog.target
 
 [Service]
 User=$homedir
-WorkingDirectory=/home/mapr/$app/scripts
-ExecStart=/usr/lib/jvm/java/bin/java -jar /$homedir/$app/scripts/$jarf
+WorkingDirectory=$homedir/$usr/$app
+ExecStart=/usr/lib/jvm/java/bin/java -jar $homedir/$usr/$app/$jarf
 ExecStop=/bin/kill -15 $MAINPID
 SuccessExitStatus=143
 
@@ -35,7 +38,8 @@ WantedBy=multi-user.target
 EOF
                     ls -l
                     cat $app.service
-                    
+                    cd $curdir
+                    chmod -R 775 $app
                 '''
 }
 
@@ -50,16 +54,42 @@ def writescript() {
             		usr="$varuser"
                     curdir=$(pwd)
                 	cd $curdir
-                	echo "creating file: run"$app".sh in directory: $curdir"
-cat << EOF > run"$app".sh
-#!/bin/bash
+                	cd $app
+                	echo "creating file: run"$app".sh in directory: $app/$curdir"
+cat << EOF > run"$app".txt
+
+get_script_dir () {
+     SOURCE="|{BASH_SOURCE[0]}"
+     # While |SOURCE is a symlink, resolve it
+     while [ -h "|SOURCE" ]; do
+          DIR="|( cd -P "|( dirname "|SOURCE" )" && pwd )"
+          SOURCE="|( readlink "|SOURCE" )"
+          # If |SOURCE was a relative symlink (so no "/" as prefix, need to resolve it relative to the symlink base directory
+          [[ |SOURCE != /* ]] && SOURCE="|DIR/|SOURCE"
+     done
+     DIR="|( cd -P "|( dirname "|SOURCE" )" && pwd )"
+     echo "|DIR"
+}
+
+SCRIPTPATH=|(get_script_dir)
+echo "Current Starting Directory on Invocation of Script is ="|(pwd)
+
+cd "|SCRIPTPATH"
+curpath=|SCRIPTPATH
+
+echo "Script Loaded From: " |SCRIPTPATH
+echo "Script is running under userid: " `whoami`
+echo "current path is now: " |curpath
 
 nohup java -jar $jarf > $app.out &
 EOF
 
-                    ls -l
-                    cat run"$app".sh
-                    
+                    cat run"$app".txt | tr "|" "$" > run"$app".sh
+                    rm -f run"$app".txt
+                    cd $curdir
+                    chmod -R 775 $app
+                    ls -l $app
+                    cat $app/run"$app".sh
                 '''
 }
 pipeline {
