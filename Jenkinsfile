@@ -5,6 +5,12 @@ def workingdir=""
 def jarfile=""
 def user="mapr"
 def rootdir="/user"
+
+def writefiles() {
+	writeservice()
+	writescript()
+}
+
 def writeservice() {
      sh script:'''
                     #!/usr/bin/env bash
@@ -234,8 +240,7 @@ EOF
                 env.varappname="$appname"
                 env.varuser="$user"
                 env.varrootdir="$rootdir"
-                writeservice()
-                writescript()
+                writefiles()
                 echo "End-test-4"
             }
         }
