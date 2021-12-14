@@ -3,8 +3,8 @@ def appname = "testbuild"
 def giturl = "git@github.com:richeso/${appname}.git"
 def workingdir=""
 def jarfile=""
-def user="mapr"
-def rootdir="/user"
+def DeployUserid="mapr"
+def DeployRoot="home"
 
 def writefiles() {
 	writeservice()
@@ -18,8 +18,8 @@ def writeservice() {
                     echo "*** appname is:  $varappname "
             		app="$varappname"
             		jarf="$varjarfile"
-            		homedir="$varrootdir"
-            		usr="$varuser"
+            		homedir="$varDeployRoot"
+            		usr="$varDeployUserid"
                     curdir=$(pwd)
                 	cd $curdir/build
                 	[ -f $app.service ] && rm -f $app.service
@@ -31,9 +31,9 @@ Description=Volume Request Rest Web
 After=syslog.target
 
 [Service]
-User=$homedir
-WorkingDirectory=$homedir/$usr/$app
-ExecStart=/usr/lib/jvm/java/bin/java -jar $homedir/$usr/$app/$jarf
+User=$usr
+WorkingDirectory=/$homedir/$usr/$app/scripts
+ExecStart=/usr/lib/jvm/java/bin/java -jar /$homedir/$usr/$app/scripts/$jarf
 ExecStop=/bin/kill -15 $MAINPID
 SuccessExitStatus=143
 
@@ -55,8 +55,8 @@ def writescript() {
                     echo "*** appname is:  $varappname "
             		app="$varappname"
             		jarf="$varjarfile"
-            		homedir="$varrootdir"
-            		usr="$varuser"
+            		homedir="$varDeployRoot"
+            		usr="$varDeployUserid"
                     curdir=$(pwd)
                 	cd $curdir/build
                 	workfile=run"$app".sh
@@ -67,6 +67,7 @@ def writescript() {
                 	workdir=$(pwd)
                 	echo "creating file: $workfile in directory: $workdir"
 cat << EOF > $worktxt
+#!/usr/bin/env bash
 
 get_script_dir () {
      SOURCE="|{BASH_SOURCE[0]}"
@@ -88,13 +89,14 @@ cd "|SCRIPTPATH"
 curpath=|SCRIPTPATH
 
 echo "Script Loaded From: " |SCRIPTPATH
-echo "Script is running under userid: " `whoami`
+echo "Script is running under userid: " (whoami)
 echo "current path is now: " |curpath
 
 nohup java -jar $jarf > $app.out &
 EOF
 					# Display contents of created file
                     cat $worktxt | tr "|" "$" > $workfile
+                    sed -i 's/(whoami)/`whoami`/g' $workfile 
                     rm -f $worktxt
                     cd $curdir
                     chmod -R 775 build
@@ -251,8 +253,8 @@ EOF
                 	echo "Test4- End: appname is: $appname"
                 	env.varjarfile="$jarfile"
                 	env.varappname="$appname"
-                	env.varuser="$user"
-                	env.varrootdir="$rootdir"
+                	env.varDeployUserid="$DeployUserid"
+                	env.varDeployRoot="$DeployRoot"
                 	writefiles()
                 	echo "End-test-4"
             		}
