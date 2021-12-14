@@ -1,0 +1,14 @@
+[Unit]
+Description=Volume Request Rest Web
+After=syslog.target
+
+[Service]
+User=/user
+WorkingDirectory=/user/mapr/mgrweb
+ExecStart=/usr/lib/jvm/java/bin/java -jar /user/mapr/mgrweb/mgrweb-0.0.1-SNAPSHOT.jar
+ExecStop=/bin/kill -15 
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target
+

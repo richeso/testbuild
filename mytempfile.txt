@@ -1,0 +1,5 @@
+The current working directory is: /var/jenkins_home/workspace/TestBuild
+You are logged in as: jenkins
+These contents will be written to the file.
+This line is indented.
+This is line 3
