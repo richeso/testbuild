@@ -42,9 +42,9 @@ WantedBy=multi-user.target
 
 EOF
                     ls -l
+                    chmod 755 $app.service
                     cat $app.service
                     cd $curdir
-                    chmod -R 775 $app
                 '''
 }
 
@@ -121,9 +121,11 @@ pipeline {
                 script {
                     properties([
                         parameters([
-                            booleanParam(name: "REFRESH", description: 'Refresh workspace From SCM', defaultValue: false),
-                            choice(choices: ['./target', './build'], description: 'inputdir', name: 'inputdir'),
-                            choice(choices: ['txt', 'sh'], description: 'filetype', name: 'filetype'),
+                            booleanParam(name: "REFRESH", description: 'Perform Refresh Only of workspace From SCM', defaultValue: false),
+                            choice(choices: ['./build', './target'], description: 'inputdir', name: 'inputdir'),
+                            choice(choices: ['sh', 'txt'], description: 'filetype', name: 'filetype'),
+                            booleanParam(name: "BUILD", description: 'Perform Build Steps', defaultValue: false),
+                            choice(choices: ['BuildMgrsvc', 'BuildMgrweb', 'BuildMsweb'], description: 'Create Service and Script for This Build', name: 'searchBuildir'),
                             gitParameter (branchFilter: 'origin/(.*)', defaultValue: 'master', name: 'BRANCH', type: 'PT_BRANCH')
                         ])
                     ])
@@ -147,6 +149,8 @@ pipeline {
 						error = result.endsWith("error")
 						echo "${result}"
 						echo "${error}"
+						continueSteps = false
+                        return
                     }
                 }
             }
@@ -172,6 +176,7 @@ EOF
                 '''
             }
         }
+        
         stage("Test2-createdir") {
             steps {
                 sh script: '''
@@ -185,13 +190,22 @@ EOF
                 '''
             }
         }
-        stage("Test3-checkfile") {
+        
+        stage("Build-Refresh") {
+        
+        	when {
+                	expression {
+                    continueSteps == true
+                	}
+            	}
+            
             steps {
                script {
+                  env.varSearchBuildir="${searchBuildir}"
                   def foundfile = sh (returnStdout: true, script: '''
                         #!/usr/bin/env bash
                         curdir=$(pwd)
-                        cd ../BuildMgrweb/target
+                        cd ../$varSearchBuildir/target
                     	for file in *.jar
                     	do
                         # do something on "$file"
@@ -227,27 +241,23 @@ EOF
                 echo "foundfile2: ${foundfile[2]}"
                 echo "foundfile3: ${foundfile[3]}"
                 echo "foundfile4: ${foundfile[4]}"
-                echo "foundfile5: ${foundfile[5]}"
-                echo "foundfile6: ${foundfile[6]}"
                 jarfile="${foundfile[-1]}"
                 appname="${foundfile[0]}"
                }
-            }
-        }
-     
-    stage("Test4-End") {
-        steps {
+           
             script {
-                echo "Test4- End: jarfile is: $jarfile"
-                echo "Test4- End: appname is: $appname"
-                env.varjarfile="$jarfile"
-                env.varappname="$appname"
-                env.varuser="$user"
-                env.varrootdir="$rootdir"
-                writefiles()
-                echo "End-test-4"
-            }
-        }
-    }
+             	if (params.BUILD) {
+                	echo "Test4- End: jarfile is: $jarfile"
+                	echo "Test4- End: appname is: $appname"
+                	env.varjarfile="$jarfile"
+                	env.varappname="$appname"
+                	env.varuser="$user"
+                	env.varrootdir="$rootdir"
+                	writefiles()
+                	echo "End-test-4"
+            		}
+            	}
+        	}
+    	}
     }
 }
