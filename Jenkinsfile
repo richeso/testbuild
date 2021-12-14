@@ -21,11 +21,10 @@ def writeservice() {
             		homedir="$varrootdir"
             		usr="$varuser"
                     curdir=$(pwd)
-                	cd $curdir
-                	[ -d $app ] && rm -rf $app
-                	mkdir $app
-                	cd $app
-                	echo "creating file: $app.service in directory: $curdir/$app"
+                	cd $curdir/build
+                	[ -f $app.service ] && rm -f $app.service
+                	workdir=$(pwd)
+                	echo "creating file: $app.service in directory: $workdir"
 cat << EOF > $app.service
 [Unit]
 Description=Volume Request Rest Web
@@ -59,10 +58,15 @@ def writescript() {
             		homedir="$varrootdir"
             		usr="$varuser"
                     curdir=$(pwd)
-                	cd $curdir
-                	cd $app
-                	echo "creating file: run"$app".sh in directory: $app/$curdir"
-cat << EOF > run"$app".txt
+                	cd $curdir/build
+                	workfile=run"$app".sh
+                	worktxt=run"$app".txt
+                	# Delete output files - if they exist
+                	[ -f $workfile ] && rm -f $workfile
+                	[ -f $worktxt ] && rm -f $worktxt
+                	workdir=$(pwd)
+                	echo "creating file: $workfile in directory: $workdir"
+cat << EOF > $worktxt
 
 get_script_dir () {
      SOURCE="|{BASH_SOURCE[0]}"
@@ -89,13 +93,13 @@ echo "current path is now: " |curpath
 
 nohup java -jar $jarf > $app.out &
 EOF
-
-                    cat run"$app".txt | tr "|" "$" > run"$app".sh
-                    rm -f run"$app".txt
+					# Display contents of created file
+                    cat $worktxt | tr "|" "$" > $workfile
+                    rm -f $worktxt
                     cd $curdir
-                    chmod -R 775 $app
-                    ls -l $app
-                    cat $app/run"$app".sh
+                    chmod -R 775 build
+                    ls -l build
+                    cat build/$workfile
                 '''
 }
 pipeline {
